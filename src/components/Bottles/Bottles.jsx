@@ -1,5 +1,71 @@
-Ad Blockers: If you're using an ad blocker, try disabling it for YouTube. Some ad blockers might interfere with the way ads are displayed on the platform.
+import { useEffect } from "react";
+import { useState } from "react";
+import Bottle from "../Bottle/Bottle";
+import './Bottles.css';
+import { addToLS, getStoredCart, removeFromLS } from "../../utilities/localstorage";
+import Cart from "../Cart/Cart";
 
-Update Your Browser: Make sure your web browser is up-to-date. Outdated browsers can sometimes cause issues with ad loading.
+const Bottles = () => {
+    const [bottles, setBottles] = useState([]);
+    const [cart, setCart] = useState([]);
 
-Clear Browser Cache and Cookies: Cached data and cookies can sometimes cause problems with ad loading. Clear your browser's cache and cookies and then try accessing YouTube again.
+    useEffect(() => {
+        fetch('bottles.json')
+            .then(res => res.json())
+            .then(data => setBottles(data))
+    }, [])
+
+    // load cart from local storage
+    useEffect(() => {
+        console.log('called the useEffect', bottles.length)
+        if (bottles.length) {
+            const storedCart = getStoredCart();
+            console.log(storedCart, bottles);
+            const savedCart = [];
+            for(const id of storedCart){
+                console.log(id);
+                const bottle = bottles.find(bottle => bottle.id === id);
+                if(bottle){
+                    savedCart.push(bottle)
+                }
+            }
+
+            console.log('saved cart', savedCart)
+            setCart(savedCart);
+
+        }
+    }, [bottles])
+
+
+    const handleAddToCart = bottle => {
+        const newCart = [...cart, bottle];
+        setCart(newCart);
+        addToLS(bottle.id);
+    }
+
+    const handleRemoveFromCart = id => {
+        // visual cart remove
+        const remainingCart = cart.filter(bottle => bottle.id !== id);
+        setCart(remainingCart);
+        // remove from LS 
+        removeFromLS(id);
+    }
+
+    return (
+        <div>
+            <h2>Bottles Available: {bottles.length}</h2>
+            <Cart cart={cart} handleRemoveFromCart={handleRemoveFromCart}></Cart>
+            <div className="bottle-container">
+                {
+                    bottles.map(bottle => <Bottle
+                        key={bottle.id}
+                        bottle={bottle}
+                        handleAddToCart={handleAddToCart}
+                    ></Bottle>)
+                }
+            </div>
+        </div>
+    );
+};
+
+export default Bottles;
